@@ -5,12 +5,15 @@ import torch.nn.functional as F
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
+
+        #normal CNN architecture
         self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
         self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
         self.conv2_drop = nn.Dropout()
         self.fc1 = nn.Linear(320, 50)
         self.fc2 = nn.Linear(50, 10)
 
+        #localization net
         self.localization = nn.Sequential(
             nn.Conv2d(1, 8, kernel_size=7),
             nn.MaxPool2d(2, stride=2),
@@ -20,6 +23,7 @@ class Net(nn.Module):
             nn.ReLU(inplace=True)
         )
 
+        #regressor network
         self.fc_loc = nn.Sequential(
             nn.Linear(10*3*3, 32),
             nn.ReLU(inplace=True),
@@ -29,6 +33,7 @@ class Net(nn.Module):
         self.fc_loc[2].weight.data.zero_()
         self.fc_loc[2].bias.data.copy_(torch.tensor([1, 0, 0, 0, 1, 0], dtype=torch.float))
 
+    #spacially transforms image
     def stn(self, x):
         xs = self.localization(x).view(-1, 10*3*3)
         theta = self.fc_loc(xs).view(-1, 2, 3)
